@@ -1,16 +1,9 @@
 Write-Host "Day 1"
 
-#$inputFilename = "exampleInputPart1.txt"
-#$inputFilename = "exampleInputPart2.txt"
-$inputFilename = "input.txt"
-
-[string[]]$lines = Get-Content $inputFilename
-
-$digits = $lines | ForEach-Object {$_ -replace '[^\d]+'}
-$numbers = $digits | ForEach-Object { [int]"$($_[0])$($_[-1])" }
-$sum = ($numbers | Measure-Object -sum).Sum
-
-Write-Host "Part 1: The sum of the calibration values is $sum."
+# $inputFilenamePart1 = "exampleInputPart1.txt"
+# $inputFilenamePart2 = "exampleInputPart2.txt"
+$inputFilenamePart1 = "input.txt"
+$inputFilenamePart2 = "input.txt"
 
 $textToDigits = @{
     '0' = 0
@@ -35,44 +28,29 @@ $textToDigits = @{
     'nine' = 9
 }
 
-$numbers = @()
+$matchPartOne = (
+    $textToDigits.GetEnumerator() |
+        ForEach-Object { $_.Key } |
+        Where-Object { ($_ -as [int] -is [int]) } ) -join '|'
 
-foreach ($currentLine in $lines) {
-    # Find first digit.
-    $matchFound = $false
-    for ($i = 0; $i -lt $currentLine.Length; $i++) {
-        $currentSubstring = $currentLine.Substring($i)
-        foreach ($currentTextToDigit in $textToDigits.GetEnumerator()) {
-            if ($currentSubstring.StartsWith($currentTextToDigit.Key)) {
-                $firstDigit = $currentTextToDigit.Value
-                $matchFound = $true
-                break
-            }
-        }
-        if ($matchFound) {
-            break
-        }
+$numbers = Get-Content $inputFilenamePart1 |
+    ForEach-Object {
+        $currentLineMatches = Select-String $matchPartOne -InputObject $_ -AllMatches
+        $textToDigits[$currentLineMatches.Matches[0].Value] * 10 + $textToDigits[$currentLineMatches.Matches[-1].Value]
     }
-
-    # Find last digit.
-    $matchFound = $false
-    for ($i = 0; $i -lt $currentLine.Length; $i++) {
-        $currentSubstring = $currentLine.Substring(0, $currentLine.Length - $i)
-        foreach ($currentTextToDigit in $textToDigits.GetEnumerator()) {
-            if ($currentSubstring.EndsWith($currentTextToDigit.Key)) {
-                $lastDigit = $currentTextToDigit.Value
-                $matchFound = $true
-                break
-            }
-        }
-        if ($matchFound) {
-            break
-        }
-    }
-
-    $numbers += $firstDigit * 10 + $lastDigit
-}
-
 $sum = ($numbers | Measure-Object -sum).Sum
+Write-Host "Part 1: The sum of the calibration values is $sum."
 
+$matchPartTwo = (
+    $textToDigits.GetEnumerator() |
+        ForEach-Object { $_.Key } ) -join '|'
+$regexFromRightPartTwo = [regex]::new($matchPartTwo, [System.Text.RegularExpressions.RegexOptions]::RightToLeft)
+
+$numbers = Get-Content $inputFilenamePart2 |
+    ForEach-Object {
+        $currentLineMatches = Select-String $matchPartTwo -InputObject $_ -AllMatches | Sort-Object -Property Index
+        $currentLineMatchesFromRight = $regexFromRightPartTwo.Matches($_) | Sort-Object -Property Index
+        $textToDigits[$currentLineMatches.Matches[0].Value] * 10 + $textToDigits[$currentLineMatchesFromRight[-1].Value]
+    }
+$sum = ($numbers | Measure-Object -sum).Sum
 Write-Host "Part 2: The sum of the calibration values is $sum."
