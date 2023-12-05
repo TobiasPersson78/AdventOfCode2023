@@ -13,20 +13,19 @@ IList<string> lines = File
 
 IList<long> seedNumbers = GetNumbersFromLine(lines[0]);
 
-//IList<NumberAndRange> inputNumbersPartA = seedNumbers.Select(item => new NumberAndRange(item, 1)).ToList();
-//IList<NumberAndRange> convertedNumbersPartA = ConvertNumbers(inputNumbersPartA);
-//long lowestLocationNumberPartA = convertedNumbersPartA.Min(item => item.Number);
+IList<NumberAndRange> inputNumbersPartA = seedNumbers.Select(item => new NumberAndRange(item, 1)).ToList();
+IList<NumberAndRange> convertedNumbersPartA = ConvertNumbers(inputNumbersPartA);
+long lowestLocationNumberPartA = convertedNumbersPartA.Min(item => item.Number);
 
-List<NumberAndRange> inputNumbersPartB = new();
-for (int i = 0; i < seedNumbers.Count; i += 2)
-{
-	inputNumbersPartB.Add(new(seedNumbers[i], seedNumbers[i+1]));
-}
+List<NumberAndRange> inputNumbersPartB =
+	Enumerable.Range(0, seedNumbers.Count / 2)
+		.Select(index => new NumberAndRange(seedNumbers[2 * index], seedNumbers[2 * index + 1]))
+		.ToList();
 IList<NumberAndRange> convertedNumbersPartB = ConvertNumbers(inputNumbersPartB);
 long lowestLocationNumberPartB = convertedNumbersPartB.Min(item => item.Number);
 
-//Console.WriteLine("Day 5A");
-//Console.WriteLine($"Lowest location number part A: {lowestLocationNumberPartA}");
+Console.WriteLine("Day 5A");
+Console.WriteLine($"Lowest location number part A: {lowestLocationNumberPartA}");
 
 Console.WriteLine("Day 5B");
 Console.WriteLine($"Lowest location number part B: {lowestLocationNumberPartB}");
@@ -47,31 +46,59 @@ IList<NumberAndRange> ConvertNumbers(IList<NumberAndRange> numbersToConvert)
 		}
 		else
 		{
-			var splitNumbersStart = numbersToConvert
-				.SelectMany(item =>
-				{
-					Converter? matchingConverter = converters.FirstOrDefault(converter =>
-						IsBetween(converter.SourceStart, converter.Range, item.Number));
+			Func<NumberAndRange, Converter, bool> isBetweenCheckerStart = (NumberAndRange numberToSplit, Converter converter) =>
+				IsBetween(
+					numberToSplit.Number,
+					numberToSplit.Number + numberToSplit.Range - 1,
+					converter.SourceStart + 1);
+			Func<Converter, long> splitPointProviderStart = (Converter converter) => converter.SourceStart + 1;
+			Func<NumberAndRange, Converter, bool> isBetweenCheckerEnd = (NumberAndRange numberToSplit, Converter converter) =>
+				IsBetween(
+					numberToSplit.Number,
+					numberToSplit.Number + numberToSplit.Range - 1,
+					converter.SourceStart + converter.Range - 1);
+			Func<Converter, long> splitPointProviderEnd = (Converter converter) => converter.SourceStart + converter.Range;
 
-					return matchingConverter is not null
-						? SplitRange(item, matchingConverter.SourceStart + matchingConverter.Range)
-						: new[] { item };
-				}).ToList();
-			var splitNumbersEnd = splitNumbersStart
-				.SelectMany(item =>
+			List<NumberAndRange> splitNumbers = new(numbersToConvert);
+			foreach ((Func<NumberAndRange, Converter, bool>? isBetweenChecker, Func<Converter, long>? splitPointProvider) in new[]
+					 {
+						 (IsBetweenChecker: isBetweenCheckerStart, SplitPointProvider: splitPointProviderStart),
+						 (IsBetweenChecker: isBetweenCheckerEnd, SplitPointProvider: splitPointProviderEnd)
+					 })
+			{
+				Stack<NumberAndRange> numbersToSplit = new(splitNumbers.AsEnumerable().Reverse());
+				splitNumbers.Clear();
+				while (numbersToSplit.TryPop(out NumberAndRange? numberToSplit))
 				{
-					Converter? matchingConverter = converters.FirstOrDefault(converter =>
-						IsBetween(converter.SourceStart, converter.Range, item.Number + item.Range));
+					NumberAndRange localNumberToSplit = numberToSplit;
+					Converter? matchingConverter = converters.FirstOrDefault(converter => isBetweenChecker(localNumberToSplit, converter));
+					IList<NumberAndRange> splits =
+						matchingConverter is not null
+							? SplitRange(numberToSplit, splitPointProvider(matchingConverter))
+								.ToList()
+							: new[] { numberToSplit };
+					if (splits.Count <= 1)
+					{
+						splitNumbers.Add(numberToSplit);
+					}
+					else
+					{
+						foreach (NumberAndRange split in splits)
+						{
+							numbersToSplit.Push(split);
+						}
+					}
+				}
+			}
 
-					return matchingConverter is not null
-						? SplitRange(item, matchingConverter.SourceStart + matchingConverter.Range)
-						: new[] { item };
-				}).ToList();
-			var convertedNumbers = splitNumbersEnd
+			List<NumberAndRange> convertedNumbers = splitNumbers
 				.Select(item =>
 				{
 					Converter? matchingConverter = converters.FirstOrDefault(converter =>
-						IsBetween(converter.SourceStart, converter.Range, item.Number));
+						IsBetween(
+							converter.SourceStart,
+							converter.SourceStart + converter.Range - 1,
+							item.Number));
 					return matchingConverter is not null
 						? new NumberAndRange(
 							matchingConverter.DestinationStart + (item.Number - matchingConverter.SourceStart),
@@ -89,16 +116,10 @@ IList<NumberAndRange> ConvertNumbers(IList<NumberAndRange> numbersToConvert)
 
 IEnumerable<NumberAndRange> SplitRange(NumberAndRange numberAndRange, long splitPoint)
 {
-	if (numberAndRange.Range <= 1)
-	{
-		yield return numberAndRange;
-		yield break;
-	}
-
 	long splitPointOffset = splitPoint - numberAndRange.Number;
 
-	if (splitPointOffset >= 0 &&
-		splitPointOffset < numberAndRange.Range)
+	if (splitPointOffset > 0 &&
+		splitPointOffset <= numberAndRange.Range - 1)
 	{
 		yield return new NumberAndRange(numberAndRange.Number, splitPointOffset);
 		yield return new NumberAndRange(numberAndRange.Number + splitPointOffset, numberAndRange.Range - splitPointOffset);
@@ -109,8 +130,8 @@ IEnumerable<NumberAndRange> SplitRange(NumberAndRange numberAndRange, long split
 	}
 }
 
-bool IsBetween(long start, long range, long valueToTest) =>
-	start <= valueToTest && valueToTest < start + range;
+bool IsBetween(long start, long end, long valueToTest) =>
+	start <= valueToTest && valueToTest <= end;
 
 record Converter(long DestinationStart, long SourceStart, long Range);
 record NumberAndRange(long Number, long Range);
