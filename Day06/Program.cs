@@ -19,7 +19,7 @@ int productPartA =
 				.Count())
 		.Aggregate(
 			1,
-			(int curr, int acc) => curr * acc);
+			(int acc, int curr) => acc * curr);
 
 long timePartB = long.Parse(Regex.Replace(lines[0], @"[^\d]", ""));
 long distancePartB = long.Parse(Regex.Replace(lines[1], @"[^\d]", ""));
