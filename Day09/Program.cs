@@ -13,8 +13,13 @@ List<List<int>> listOfSequences =
 				.ToList())
 		.ToList();
 
-int sumOfAllExtrapolatedValuesPartA = listOfSequences.Sum(item => ExtrapolateSequence(item, false));
-int sumOfAllExtrapolatedValuesPartB = listOfSequences.Sum(item => ExtrapolateSequence(item, true));
+int sumOfAllExtrapolatedValuesPartA = listOfSequences.Sum(ExtrapolateSequence);
+int sumOfAllExtrapolatedValuesPartB = listOfSequences.Sum(item =>
+	ExtrapolateSequence(
+		item
+			.AsEnumerable()
+			.Reverse()
+			.ToList()));
 
 Console.WriteLine("Day 9A");
 Console.WriteLine($"Sum of all extrapolated end values: {sumOfAllExtrapolatedValuesPartA}");
@@ -28,33 +33,7 @@ IList<int> Difference(IList<int> sequence) =>
 		.Select(index => sequence[index + 1] - sequence[index])
 		.ToList();
 
-int ExtrapolateSequence(IList<int> sequence, bool extrapolateBeginning)
-{
-	Stack<IList<int>> stackOfPredictions = new();
-
-	while (!sequence.All(item => item == 0))
-	{
-		stackOfPredictions.Push(sequence);
-		sequence = Difference(sequence);
-	}
-
-	while (stackOfPredictions.Any())
-	{
-		IList<int> topOfStack = stackOfPredictions.Pop();
-
-		if (extrapolateBeginning)
-		{
-			topOfStack.Insert(0, topOfStack.First() - sequence.First());
-		}
-		else
-		{
-			topOfStack.Add(topOfStack.Last() + sequence.Last());
-		}
-
-		sequence = topOfStack;
-	}
-
-	return extrapolateBeginning
-		? sequence.First()
-		: sequence.Last();
-}
+int ExtrapolateSequence(IList<int> sequence) =>
+	sequence.All(item => item == 0)
+		? 0
+		: sequence.Last() + ExtrapolateSequence(Difference(sequence));
