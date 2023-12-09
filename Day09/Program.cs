@@ -6,20 +6,15 @@ string inputFilename = useExampleInput
 List<List<int>> listOfSequences =
 	File
 		.ReadAllLines(inputFilename)
-		.Select(line =>
-			line
-				.Split(' ')
-				.Select(item => int.Parse(item))
+		.Select(line => line.Split(' '))
+		.Select(numberStrings =>
+			numberStrings
+				.Select(int.Parse)
 				.ToList())
 		.ToList();
 
-int sumOfAllExtrapolatedValuesPartA = listOfSequences.Sum(ExtrapolateSequence);
-int sumOfAllExtrapolatedValuesPartB = listOfSequences.Sum(item =>
-	ExtrapolateSequence(
-		item
-			.AsEnumerable()
-			.Reverse()
-			.ToList()));
+int sumOfAllExtrapolatedValuesPartA = listOfSequences.Sum(sequence => ExtrapolateSequence(sequence).AfterEnd);
+int sumOfAllExtrapolatedValuesPartB = listOfSequences.Sum(sequence => ExtrapolateSequence(sequence).BeforeStart);
 
 Console.WriteLine("Day 9A");
 Console.WriteLine($"Sum of all extrapolated end values: {sumOfAllExtrapolatedValuesPartA}");
@@ -27,13 +22,14 @@ Console.WriteLine($"Sum of all extrapolated end values: {sumOfAllExtrapolatedVal
 Console.WriteLine("Day 9B");
 Console.WriteLine($"Sum of all extrapolated start values: {sumOfAllExtrapolatedValuesPartB}");
 
-IList<int> Difference(IList<int> sequence) =>
-	Enumerable
-		.Range(0, sequence.Count - 1)
-		.Select(index => sequence[index + 1] - sequence[index])
-		.ToList();
+IEnumerable<int> Difference(ICollection<int> sequence) =>
+	sequence
+		.Zip(sequence.Skip(1))
+		.Select(pair => pair.Second - pair.First);
 
-int ExtrapolateSequence(IList<int> sequence) =>
+(int BeforeStart, int AfterEnd) ExtrapolateSequence(ICollection<int> sequence) =>
 	sequence.All(item => item == 0)
-		? 0
-		: sequence.Last() + ExtrapolateSequence(Difference(sequence));
+		? (0, 0)
+		: new[] { ExtrapolateSequence(Difference(sequence).ToList()) }
+			.Select(nextLine => (sequence.First() - nextLine.BeforeStart, sequence.Last() + nextLine.AfterEnd))
+			.First();
