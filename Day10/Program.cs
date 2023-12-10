@@ -14,9 +14,24 @@ int startPositionIndex = mazeString.IndexOf('S');
 	: (Direction.North, '|');
 string[] maze = mazeString.Replace('S', sTile).Split('\n');
 bool[,] visitedCells = new bool[mazeWidth, mazeHeight];
+Dictionary<(char Pipe, Direction InDirection), Direction> LookupForPipeAndDirection = new()
+{
+	{ ('|', Direction.North), Direction.North },
+	{ ('|', Direction.South), Direction.South },
+	{ ('-', Direction.West), Direction.West },
+	{ ('-', Direction.East), Direction.East },
+	{ ('L', Direction.South), Direction.East },
+	{ ('L', Direction.West), Direction.North },
+	{ ('J', Direction.East), Direction.North },
+	{ ('J', Direction.South), Direction.West },
+	{ ('7', Direction.East), Direction.South },
+	{ ('7', Direction.North), Direction.West },
+	{ ('F', Direction.North), Direction.East },
+	{ ('F', Direction.West), Direction.South }
+};
 
-int numberOfStepsToLoop = 0;
-do
+int numberOfStepsToLoop ;
+for (numberOfStepsToLoop = 0; numberOfStepsToLoop == 0 || position != startPosition; ++numberOfStepsToLoop)
 {
 	// Move
 	position = direction switch
@@ -26,38 +41,11 @@ do
 		Direction.South => (position.X, position.Y + 1),
 		_ => (position.X - 1, position.Y)
 	};
-	++numberOfStepsToLoop;
 	visitedCells[position.X, position.Y] = true;
 
 	// Check direction change
-	direction = direction switch
-	{
-		Direction.North => maze[position.Y][position.X] switch
-		{
-			'7' => Direction.West,
-			'F' => Direction.East,
-			_ => Direction.North
-		},
-		Direction.East => maze[position.Y][position.X] switch
-		{
-			'J' => Direction.North,
-			'7' => Direction.South,
-			_ => Direction.East
-		},
-		Direction.South => maze[position.Y][position.X] switch
-		{
-			'L' => Direction.East,
-			'J' => Direction.West,
-			_ => Direction.South
-		},
-		_ => maze[position.Y][position.X] switch
-		{
-			'F' => Direction.South,
-			'L' => Direction.North,
-			_ => Direction.West
-		}
-	};
-} while (position != startPosition);
+	direction = LookupForPipeAndDirection[(maze[position.Y][position.X], direction)];
+}
 
 int numberOfEnclosedCells = 0;
 for(int row = 0; row < mazeHeight; ++row)
