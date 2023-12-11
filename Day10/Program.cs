@@ -9,12 +9,12 @@ int mazeHeight = mazeString.Length / (mazeWidth + 1);
 int startPositionIndex = mazeString.IndexOf('S');
 (int X, int Y) startPosition = (startPositionIndex % (mazeWidth + 1), startPositionIndex / (mazeWidth + 1));
 (int X, int Y) position = startPosition;
-(Direction direction, char sTile) = useExampleInput
+(Direction direction, char startTile) = useExampleInput
 	? (Direction.South, '7')
 	: (Direction.North, '|');
-string[] maze = mazeString.Replace('S', sTile).Split('\n');
+string[] maze = mazeString.Replace('S', startTile).Split('\n');
 bool[,] visitedCells = new bool[mazeWidth, mazeHeight];
-Dictionary<(char Pipe, Direction InDirection), Direction> LookupForPipeAndDirection = new()
+Dictionary<(char Pipe, Direction InDirection), Direction> lookupForPipeAndDirection = new()
 {
 	{ ('|', Direction.North), Direction.North },
 	{ ('|', Direction.South), Direction.South },
@@ -30,7 +30,7 @@ Dictionary<(char Pipe, Direction InDirection), Direction> LookupForPipeAndDirect
 	{ ('F', Direction.West), Direction.South }
 };
 
-int numberOfStepsToLoop ;
+int numberOfStepsToLoop;
 for (numberOfStepsToLoop = 0; numberOfStepsToLoop == 0 || position != startPosition; ++numberOfStepsToLoop)
 {
 	// Move
@@ -44,11 +44,11 @@ for (numberOfStepsToLoop = 0; numberOfStepsToLoop == 0 || position != startPosit
 	visitedCells[position.X, position.Y] = true;
 
 	// Check direction change
-	direction = LookupForPipeAndDirection[(maze[position.Y][position.X], direction)];
+	direction = lookupForPipeAndDirection[(maze[position.Y][position.X], direction)];
 }
 
 int numberOfEnclosedCells = 0;
-for(int row = 0; row < mazeHeight; ++row)
+for (int row = 0; row < mazeHeight; ++row)
 {
 	int crossingsInRow = 0;
 	char lastBend = '.'; // Any not 7 or J.
@@ -67,7 +67,7 @@ for(int row = 0; row < mazeHeight; ++row)
 					break;
 				case '|':
 				case '7' when lastBend == 'L':
-				case 'J' when lastBend == 'F':					
+				case 'J' when lastBend == 'F':
 					++crossingsInRow; // Not an U shape, so it crosses over the row.
 					break;
 			}
@@ -80,7 +80,7 @@ for(int row = 0; row < mazeHeight; ++row)
 }
 
 Console.WriteLine("Day 10A");
-Console.WriteLine($"Steps to reach furthest point: {numberOfStepsToLoop/2}");
+Console.WriteLine($"Steps to reach furthest point: {numberOfStepsToLoop / 2}");
 
 Console.WriteLine("Day 10B");
 Console.WriteLine($"Number of enclosed cells: {numberOfEnclosedCells}");

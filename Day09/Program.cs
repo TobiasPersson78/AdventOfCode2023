@@ -30,6 +30,6 @@ IEnumerable<int> Difference(ICollection<int> sequence) =>
 (int BeforeStart, int AfterEnd) ExtrapolateSequence(ICollection<int> sequence) =>
 	sequence.All(item => item == 0)
 		? (0, 0)
-		: new[] { ExtrapolateSequence(Difference(sequence).ToList()) }
+		: new[] { ExtrapolateSequence(Difference(sequence).ToList()) } // This is basically a local variable declaration
 			.Select(nextLine => (sequence.First() - nextLine.BeforeStart, sequence.Last() + nextLine.AfterEnd))
 			.First();

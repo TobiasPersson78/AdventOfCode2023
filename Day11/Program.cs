@@ -24,7 +24,7 @@ List<int> emptyRowIndices =
 		.Where(yIndex => !galaxyPositions.Any(position => position.Y == yIndex))
 		.ToList();
 
-long GetSumOfShortesPaths(long emptyCellFactor) =>
+long GetSumOfShortestPaths(long emptyCellFactor) =>
 	galaxyPositions
 		.SelectMany((firstGalaxy, index) =>
 			galaxyPositions
@@ -46,8 +46,8 @@ long GetSumOfShortesPaths(long emptyCellFactor) =>
 			return pathBetweenTwoGalaxies;
 		});
 
-long sumOfShortestPathsPartA = GetSumOfShortesPaths(2);
-long sumOfShortestPathsPartB = GetSumOfShortesPaths(1_000_000);
+long sumOfShortestPathsPartA = GetSumOfShortestPaths(2);
+long sumOfShortestPathsPartB = GetSumOfShortestPaths(1_000_000);
 
 Console.WriteLine("Day 11A");
 Console.WriteLine($"Sum of shortest paths: {sumOfShortestPathsPartA}");

@@ -15,8 +15,7 @@ int productPartA =
 		.Select(timeAndDistance =>
 			Enumerable
 				.Range(1, timeAndDistance.First - 1)
-				.Where(holdTime => holdTime * (timeAndDistance.First - holdTime) > timeAndDistance.Second)
-				.Count())
+				.Count(holdTime => holdTime * (timeAndDistance.First - holdTime) > timeAndDistance.Second))
 		.Aggregate(
 			1,
 			(int acc, int curr) => acc * curr);
@@ -26,8 +25,7 @@ long distancePartB = long.Parse(Regex.Replace(lines[1], @"[^\d]", ""));
 int countPartB =
 	Enumerable
 		.Range(1, Convert.ToInt32(timePartB) - 1)
-		.Where(holdTime => holdTime * (timePartB - holdTime) > distancePartB)
-		.Count();
+		.Count(holdTime => holdTime * (timePartB - holdTime) > distancePartB);
 
 Console.WriteLine("Day 6A");
 Console.WriteLine($"Product of winning possibilities: {productPartA}");
