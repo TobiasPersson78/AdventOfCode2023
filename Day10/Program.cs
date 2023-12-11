@@ -51,7 +51,7 @@ int numberOfEnclosedCells = 0;
 for (int row = 0; row < mazeHeight; ++row)
 {
 	int crossingsInRow = 0;
-	char lastBend = '.'; // Any not 7 or J.
+	char lastBend = '.'; // Any character except F or L is acceptable.
 
 	// Count the number of empty cells after an odd number of crossings over the row. U shapes
 	// does not cross but FJ and L7 shapes does, even if there are horizontal steps between.
@@ -66,8 +66,8 @@ for (int row = 0; row < mazeHeight; ++row)
 					lastBend = maze[row][column];
 					break;
 				case '|':
-				case '7' when lastBend == 'L':
 				case 'J' when lastBend == 'F':
+				case '7' when lastBend == 'L':
 					++crossingsInRow; // Not an U shape, so it crosses over the row.
 					break;
 			}
