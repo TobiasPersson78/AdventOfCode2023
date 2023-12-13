@@ -1,6 +1,4 @@
-﻿using System.IO.Pipes;
-
-bool useExampleInput = false;
+﻿bool useExampleInput = false;
 string inputFilename = useExampleInput
 	? "exampleInput.txt"
 	: "input.txt";
@@ -14,63 +12,37 @@ List<string[]> patterns =
 		.Select(groupOfLines => groupOfLines.Split('\n'))
 		.ToList();
 
-var horizontalMiddle = patterns.Select(pattern => FindHorizontalMiddle(pattern)).ToList();
-var verticalMiddle = patterns.Select(pattern => FindVerticalMiddle(pattern)).ToList();
-
-int sumOfNotesPartA = horizontalMiddle.Zip(verticalMiddle).Sum(pair => pair.First + 1 + 100 * (pair.Second + 1));
+List<int> sumOfNotes =
+	new[] { 0, 1 }
+		.Select(allowedMistakes =>
+			patterns
+				.Sum(item =>
+					FindHorizontalMirrorIndex(item, allowedMistakes) + 1 +
+					100 * (FindHorizontalMirrorIndex(Transpose(item), allowedMistakes) + 1)))
+		.ToList();
 
 Console.WriteLine("Day 13A");
-Console.WriteLine($"Sum of notes: {sumOfNotesPartA}");
+Console.WriteLine($"Sum of notes without mistakes: {sumOfNotes[0]}");
 
-int FindHorizontalMiddle(string[] pattern)
-{
-	for (int doubleMiddleIndex = 1; doubleMiddleIndex < pattern[0].Length * 2 - 2; ++doubleMiddleIndex)
-	{
-		int middleIndex = doubleMiddleIndex / 2;
-		int offsetToRight = doubleMiddleIndex & 1;
+Console.WriteLine("Day 13B");
+Console.WriteLine($"Sum of notes with one mistake: {sumOfNotes[1]}");
 
-		bool isMirrorLine =
+int FindHorizontalMirrorIndex(string[] pattern, int allowedMismatches) =>
+	Enumerable
+		.Range(0, pattern[0].Length - 1)
+		.FirstOrDefault(xIndex =>
 			pattern
-				.All(line =>
+				.Select(line =>
 					Enumerable
 						.Range(0, line.Length / 2)
-						.All(offset =>
-							middleIndex - offset < 0 ||
-							middleIndex + offsetToRight + offset >= line.Length ||
-							line[middleIndex - offset] == line[middleIndex + offsetToRight + offset]));
+						.Select(offset => (LeftIndex: xIndex - offset, RightIndex: xIndex + 1 + offset))
+						.Where(item => item.LeftIndex >= 0 && item.RightIndex < line.Length)
+						.Count(item => line[item.LeftIndex] != line[item.RightIndex]))
+				.Sum() == allowedMismatches,
+			-1);
 
-		if (isMirrorLine)
-		{
-			return middleIndex;
-		}
-	}
-
-	return -1;
-}
-
-int FindVerticalMiddle(string[] pattern)
-{
-	for (int doubleMiddleIndex = 1; doubleMiddleIndex < pattern.Length * 2 - 2; ++doubleMiddleIndex)
-	{
-		int middleIndex = doubleMiddleIndex / 2;
-		int offsetToBottom = (doubleMiddleIndex & 1) & 1;
-
-		bool isMirrorColumn =
-			Enumerable
-				.Range(0, pattern[0].Length)
-				.All(xIndex =>
-					Enumerable
-						.Range(0, pattern.Length / 2)
-						.All(offset =>
-							middleIndex - offset < 0 ||
-							middleIndex + offsetToBottom + offset >= pattern.Length ||
-							pattern[middleIndex - offset][xIndex] == pattern[middleIndex + offsetToBottom + offset][xIndex]));
-
-		if (isMirrorColumn)
-		{
-			return middleIndex;
-		}
-	}
-
-	return -1;
-}
+string[] Transpose(string[] pattern) =>
+	Enumerable
+		.Range(0, pattern[0].Length)
+		.Select(xIndex => string.Join("", pattern.Select(line => line[xIndex])))
+		.ToArray();
