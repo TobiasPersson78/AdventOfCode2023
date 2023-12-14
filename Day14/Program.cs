@@ -13,15 +13,14 @@ List<List<char>> matrix =
 		.ToList();
 
 Tilt(matrix, (0, -1)); // North
-long totalLoadPartA = LoadOnNorthSide(matrix);
+int totalLoadPartA = LoadOnNorthSide(matrix);
 
-(long offset, long cycleLength) = GetCycleLength(matrix);
-long totalLoadPartB = -1;
+(int offset, int cycleLength) = GetCycleLength(matrix);
 for (long remainingCycles = (1_000_000_000 - offset) % cycleLength + 1; remainingCycles > 0; --remainingCycles)
 {
 	RotateCycle(matrix);
-	totalLoadPartB = LoadOnNorthSide(matrix);
 }
+int totalLoadPartB = LoadOnNorthSide(matrix);
 
 Console.WriteLine("Day 14A");
 Console.WriteLine($"Total load on north side: {totalLoadPartA}");
@@ -29,26 +28,25 @@ Console.WriteLine($"Total load on north side: {totalLoadPartA}");
 Console.WriteLine("Day 14B");
 Console.WriteLine($"Total load on north side after 1 billion rotations: {totalLoadPartB}");
 
-(long Offset, long CycleLength) GetCycleLength(List<List<char>> matrix)
+(int Offset, int CycleLength) GetCycleLength(List<List<char>> matrix)
 {
-	int rotations = 1;
-	Dictionary<string, long> lookupOfMovableRockPositionCycles = new()
+	var keyGenerator = () => string.Join("", GetMovableRocks(matrix).Select(item => item.ToString()));
+	Dictionary<string, int> lookupOfMovableRockPositionCycles = new()
 	{
-		{ string.Join("", GetMovableRocks(matrix).Select(item => item.ToString())), rotations }
+		{ keyGenerator(), 1 } // One rotation is done before this method is called.
 	};
 
 	while(true)
 	{
-		++rotations;
 		RotateCycle(matrix);
-		string key = string.Join("", GetMovableRocks(matrix).Select(item => item.ToString()));
+		string key = keyGenerator();
 
-		if (lookupOfMovableRockPositionCycles.TryGetValue(key, out long previousLocation))
+		if (lookupOfMovableRockPositionCycles.TryGetValue(key, out int previousLocation))
 		{
-			return (previousLocation, rotations - previousLocation);
+			return (previousLocation, lookupOfMovableRockPositionCycles.Count + 1 - previousLocation);
 		}
 
-		lookupOfMovableRockPositionCycles[key] = rotations;
+		lookupOfMovableRockPositionCycles[key] = lookupOfMovableRockPositionCycles.Count + 1;
 	}
 }
 
@@ -62,7 +60,7 @@ void RotateCycle(List<List<char>> matrix)
 
 void Tilt(List<List<char>> matrix, (int X, int Y) direction)
 {
-	ImmutableArray<(int X, int Y)> movableRockPositions = GetMovableRocks(matrix);
+	ImmutableList<(int X, int Y)> movableRockPositions = GetMovableRocks(matrix);
 
 	IOrderedEnumerable<(int X, int Y)> orderedMovableRockPositions = direction switch
 	{
@@ -86,15 +84,14 @@ void ExchangeValues(List<List<char>> matrix, (int X, int Y) firstPosition, (int 
 	matrix[secondPosition.Y][secondPosition.X] = temp;
 }
 
-(int X, int Y) GetEmptyPositionInDirection(List<List<char>> matrix, (int X, int Y) position, (int X, int Y) direction)
+(int X, int Y) GetEmptyPositionInDirection(List<List<char>> matrix, (int X, int Y) startPosition, (int X, int Y) direction)
 {
-	(int X, int Y) newPosition;
-	for (newPosition = Add(position, direction);
-		IsValidPosition(matrix, newPosition) && matrix[newPosition.Y][newPosition.X] == '.';
-		newPosition = Add(newPosition, direction))
+	(int X, int Y) newPosition = Add(startPosition, direction);
+	while (IsValidPosition(matrix, newPosition) && matrix[newPosition.Y][newPosition.X] == '.')		
 	{
+		newPosition = Add(newPosition, direction);
 	}
-	return (newPosition.X - direction.X, newPosition.Y - direction.Y);
+	return (newPosition.X - direction.X, newPosition.Y - direction.Y); // Revert the last add.
 }
 
 (int X, int Y) Add((int X, int Y) position, (int X, int Y) movement) =>
@@ -104,11 +101,11 @@ bool IsValidPosition(List<List<char>> matrix, (int X, int Y) position) =>
 	position.X >= 0 && position.X < matrix[0].Count &&
 	position.Y >= 0 && position.Y < matrix.Count;
 
-long LoadOnNorthSide(List<List<char>> matrix) =>
-	GetMovableRocks(matrix).Sum(position => (long)matrix.Count - position.Y);
+int LoadOnNorthSide(List<List<char>> matrix) =>
+	GetMovableRocks(matrix).Sum(position => matrix.Count - position.Y);
 
-ImmutableArray<(int X, int Y)> GetMovableRocks(List<List<char>> matrix) =>
+ImmutableList<(int X, int Y)> GetMovableRocks(List<List<char>> matrix) =>
 	(from xIndex in Enumerable.Range(0, matrix[0].Count)
 	 from yIndex in Enumerable.Range(0, matrix.Count)
 	 where matrix[yIndex][xIndex] == 'O'
-	 select (X: xIndex, Y: yIndex)).ToImmutableArray();
+	 select (X: xIndex, Y: yIndex)).ToImmutableList();
