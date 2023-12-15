@@ -48,10 +48,10 @@ int focusingPower =
 				.Sum())
 		.Sum();
 
-Console.WriteLine("Day 14A");
+Console.WriteLine("Day 15A");
 Console.WriteLine($"Sum of hashing results: {sumOfHashingResults}");
 
-Console.WriteLine("Day 14B");
+Console.WriteLine("Day 15B");
 Console.WriteLine($"Focusing power: {focusingPower}");
 
 int Hash(string input) =>
