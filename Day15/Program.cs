@@ -12,11 +12,11 @@ string[] instructions =
 
 int sumOfHashingResults = instructions.Sum(Hash);
 
-List<List<(string Label, string FocalLength)>> boxes =
+List<(string Label, string FocalLength)>[] boxes =
 	Enumerable
 		.Range(0, 256)
 		.Select(item => new List<(string Label, string FocalLength)>())
-		.ToList();
+		.ToArray();
 
 foreach (string[] instructionParts in instructions.Select(item => item.Split('=', '-')))
 {
