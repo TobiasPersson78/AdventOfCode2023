@@ -1,6 +1,6 @@
 ﻿using System.Collections.Immutable;
 
-bool useExampleInput = false;
+bool useExampleInput = true;
 
 string inputFilename = useExampleInput
 	? "exampleInput.txt"
@@ -33,7 +33,7 @@ Console.WriteLine($"Total load on north side after 1 billion rotations: {totalLo
 	var keyGenerator = () => string.Join("", GetMovableRocks(matrix).Select(item => item.ToString()));
 	Dictionary<string, int> lookupOfMovableRockPositionCycles = new()
 	{
-		{ keyGenerator(), 1 } // One rotation is done before this method is called.
+		{ keyGenerator(), 1 }
 	};
 
 	while(true)
@@ -87,7 +87,7 @@ void ExchangeValues(List<List<char>> matrix, (int X, int Y) firstPosition, (int 
 (int X, int Y) GetEmptyPositionInDirection(List<List<char>> matrix, (int X, int Y) startPosition, (int X, int Y) direction)
 {
 	(int X, int Y) newPosition = Add(startPosition, direction);
-	while (IsValidPosition(matrix, newPosition) && matrix[newPosition.Y][newPosition.X] == '.')		
+	while (IsValidPosition(matrix, newPosition) && matrix[newPosition.Y][newPosition.X] == '.')
 	{
 		newPosition = Add(newPosition, direction);
 	}
