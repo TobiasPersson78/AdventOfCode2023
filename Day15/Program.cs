@@ -12,11 +12,11 @@ string[] instructions =
 
 int sumOfHashingResults = instructions.Sum(Hash);
 
-List<(string Label, string FocalLength)>[] boxes =
+List<List<(string Label, string FocalLength)>> boxes =
 	Enumerable
 		.Range(0, 256)
 		.Select(item => new List<(string Label, string FocalLength)>())
-		.ToArray();
+		.ToList();
 
 foreach (string[] instructionParts in instructions.Select(item => item.Split('=', '-')))
 {
@@ -44,9 +44,8 @@ int focusingPower =
 	boxes
 		.Select((box, boxIndex) =>
 			box
-				.Select((item, listIndex) => int.Parse(item.FocalLength) * (listIndex + 1))
-				.Sum() *
-			(boxIndex + 1))
+				.Select((item, listIndex) => (boxIndex + 1) * int.Parse(item.FocalLength) * (listIndex + 1))
+				.Sum())
 		.Sum();
 
 Console.WriteLine("Day 14A");
