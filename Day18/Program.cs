@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System.Collections.Immutable;
+using System.Globalization;
 
 bool useExampleInput = false;
 
@@ -6,6 +7,8 @@ string inputFilename = useExampleInput
 	? "exampleInput.txt"
 	: "input.txt";
 
+Dictionary<char, int> horizontalLookup = new() { ['R'] = 1, ['L'] = -1, ['0'] = 1, ['2'] = -1 };
+Dictionary<char, int> verticalLookup = new() { ['D'] = 1, ['U'] = -1, ['1'] = 1, ['3'] = -1 };
 List<((char Direction, int Steps) PartA, (char Direction, int Steps) PartB)> instructions =
 	File
 		.ReadAllLines(inputFilename)
@@ -47,27 +50,11 @@ long CalculateArea(IList<(long X, long Y)> polygon)
 	return interiorPoints + boundaryLength;
 }
 
-List<(long X, long Y)> GetPointsFromInstructions(IEnumerable<(char BindingDirection, int Steps)> directionAndSteps)
-{
-	(long x, long y) = (0, 0);
-	List<(long X, long Y)> points = new() { (0, 0) }; // Start from (0, 0).
-
-	foreach ((char direction, int steps) in directionAndSteps)
-	{
-		x += direction switch
-		{
-			'R' or '0' => steps,
-			'L' or '2' => -steps,
-			_ => 0
-		};
-		y += direction switch
-		{
-			'D' or '1' => steps,
-			'U' or '3' => -steps,
-			_ => 0
-		};
-		points.Add((x, y));
-	}
-
-	return points;
-}
+IList<(long X, long Y)> GetPointsFromInstructions(IEnumerable<(char Direction, int Steps)> directionAndSteps) =>
+	directionAndSteps
+		.Aggregate(
+			ImmutableList.Create<(long X, long Y)>((0L, 0L)),
+			(acc, curr) =>
+				acc.Add(
+					(X: acc[^1].X + horizontalLookup.GetValueOrDefault(curr.Direction, 0) * curr.Steps,
+					Y: acc[^1].Y + verticalLookup.GetValueOrDefault(curr.Direction, 0) * curr.Steps)));
