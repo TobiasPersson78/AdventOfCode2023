@@ -20,11 +20,7 @@ List<Ray3D> hails =
 		.ToList();
 
 int numberOfIntersections =
-	hails
-		.SelectMany((firstHail, index) =>
-			hails
-				.Skip(index + 1)
-				.Select(secondHail => (First: firstHail, Second: secondHail)))
+	GetAllPairs(hails)
 		.Select(pair => (First: FlattenHorizontal(pair.First), Second: FlattenHorizontal(pair.Second)))
 		.Select(pair => TryGetIntersection(pair.First, pair.Second))
 		.Where(point => point is not null)
@@ -34,7 +30,7 @@ int numberOfIntersections =
 			point.Y >= minXY && point.Y <= maxXY);
 
 (decimal X, decimal Y) rockPositionXY = GetRockPosition(hails.Select(FlattenHorizontal).ToList());
-(decimal X, decimal Y) rockPositionXZ = GetRockPosition(hails.Select(FlattenVertical).ToList());
+(decimal X, decimal Y) rockPositionXZ = GetRockPosition(hails.Select(FlattenVertical).ToList()); // The Y value is really the Z value after flattening.
 long sumOfRockCoordinates = (long)Math.Round(rockPositionXY.X + rockPositionXY.Y + rockPositionXZ.Y);
 
 Console.WriteLine("Day 24A");
@@ -46,22 +42,20 @@ Console.WriteLine($"Sum of rock coordinates: {sumOfRockCoordinates}");
 	SpiralEnumeration()
 		.Select(rockVelocity =>
 		{
-			(decimal X, decimal Y)? rockPosition = null;
-
-			for (int i = 0; rockPosition is null; ++i)
-			{
-				rockPosition = TryGetIntersection(
-					ChangeVelocity(rays[i], rockVelocity),
-					ChangeVelocity(rays[i + 1], rockVelocity));
-			}
-
+			(decimal X, decimal Y)? rockPosition =
+				GetAllPairs(rays)
+					.Select(rayPair =>
+						TryGetIntersection(
+							ChangeVelocity(rayPair.First, rockVelocity),
+							ChangeVelocity(rayPair.Second, rockVelocity)))
+					.First(item => item is not null);
 			bool allRaysHitTheRock =
 				rays
 					.Select(ray => ChangeVelocity(ray, rockVelocity))
-					.All(ray => RayPassesPoint(ray, rockPosition.Value));
+					.All(ray => RayPassesPoint(ray, rockPosition!.Value));
 			return allRaysHitTheRock
-					? rockPosition
-					: null;
+				? rockPosition
+				: null;
 		})
 		.First(item => item is not null)
 		!.Value;
@@ -78,7 +72,7 @@ bool RayPassesPoint(Ray2D ray, (decimal X, decimal Y) point) =>
 	decimal deltaY = ray2.Y - ray1.Y;
 	decimal determinant = ray2.DeltaX * ray1.DeltaY - ray2.DeltaY * ray1.DeltaX;
 
-	if (determinant == 0)
+	if (determinant == 0) // Rays are parallel.
 	{
 		return null;
 	}
@@ -86,13 +80,20 @@ bool RayPassesPoint(Ray2D ray, (decimal X, decimal Y) point) =>
 	decimal u = (deltaY * ray2.DeltaX - deltaX * ray2.DeltaY) / determinant;
 	decimal v = (deltaY * ray1.DeltaX - deltaX * ray1.DeltaY) / determinant;
 
-	if (u < 0 || v < 0)
+	if (u < 0 || v < 0) // Intersection before the rays starting positions.
 	{
 		return null;
 	}
 
 	return (ray1.X + ray1.DeltaX * u, ray1.Y + ray1.DeltaY * u);
 }
+
+IEnumerable<(T First, T Second)> GetAllPairs<T>(IList<T> values) =>
+	values
+		.SelectMany((firstValue, index) =>
+			values
+				.Skip(index + 1)
+				.Select(secondValue => (First: firstValue, Second: secondValue)));
 
 IEnumerable<(int X, int Y)> SpiralEnumeration()
 {
